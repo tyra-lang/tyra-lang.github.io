@@ -53,19 +53,19 @@ import Base from '../../layouts/Base.astro';
   <div class="side-by-side">
     <div>
       <div class="code-block-label">Tyra</div>
-      <pre><code>fn main() -> Unit
+      <pre><code>{`fn main() -> Unit
   for i in 1..101
     if i % 15 == 0
       println("FizzBuzz")
-    elsif i % 3 == 0
+    else if i % 3 == 0
       println("Fizz")
-    elsif i % 5 == 0
+    else if i % 5 == 0
       println("Buzz")
     else
       println(i)
     end
   end
-end</code></pre>
+end`}</code></pre>
     </div>
     <div>
       <div class="code-block-label">Crystal</div>

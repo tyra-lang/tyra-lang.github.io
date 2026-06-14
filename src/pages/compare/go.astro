@@ -62,8 +62,10 @@ func main() {
 
   <p style="color: var(--text-muted);">
     Tyra achieves 88.7% with zero prior training data; Go's 81% benefits from years of
-    LLM training on Go code. The difference likely reflects Go's verbosity — more boilerplate
-    means more surface area where generated code can deviate from what the test harness expects.
+    LLM training on Go code. The two figures use different methodologies (multi-seed mean vs.
+    single-seed), so a direct causal comparison isn't warranted. The gap may be consistent with
+    Go's verbosity reducing LLM accuracy, but other factors (training data distribution,
+    harness differences) could also contribute.
   </p>
 
   <h2>Side-by-side: reading a list and filtering</h2>

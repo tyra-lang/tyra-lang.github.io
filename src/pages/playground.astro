@@ -273,7 +273,8 @@ import Base from '../layouts/Base.astro';
       for (const diag of diagnostics) {
         const line = document.createElement('div');
         line.className = 'diag-line';
-        const loc = diag.line != null ? ` (line ${diag.line}:${diag.col ?? 0})` : '';
+        const span = diag.spans?.[0];
+        const loc = span != null ? ` (line ${span.line}:${span.col})` : '';
         line.textContent = `E${diag.code}: ${diag.message}${loc}`;
         box.appendChild(line);
       }
