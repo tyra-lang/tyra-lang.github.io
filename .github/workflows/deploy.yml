@@ -31,15 +31,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Copy WASM artifacts
+      - name: Verify WASM artifacts
         run: |
-          mkdir -p public/wasm
-          # In CI, wasm artifacts are built by tyra repo CI and published as releases
-          # For now, copy from sibling directory if available (local dev)
-          if [ -d "../tyra/compiler/crates/tyra-wasm/pkg" ]; then
-            cp ../tyra/compiler/crates/tyra-wasm/pkg/tyra_wasm.js public/wasm/
-            cp ../tyra/compiler/crates/tyra-wasm/pkg/tyra_wasm_bg.wasm public/wasm/
-          fi
+          for f in public/wasm/tyra_wasm.js public/wasm/tyra_wasm_bg.wasm; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: missing WASM artifact: $f"
+              echo "Run wasm-pack in tyra-lang/tyra and commit the output to public/wasm/."
+              exit 1
+            fi
+          done
 
       - name: Build
         run: npm run build
