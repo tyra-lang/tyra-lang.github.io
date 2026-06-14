@@ -1,4 +1,6 @@
 ---
+import '@picocss/pico/css/pico.classless.zinc.min.css';
+
 interface Props {
   title: string;
   description?: string;
@@ -10,97 +12,134 @@ const { title, description = "Tyra — a language LLMs get right on the first tr
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
   <title>{title} · Tyra</title>
   <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <slot name="head" />
-  <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+
+  <!-- Pre-paint theme init: avoids flash of wrong theme -->
+  <script is:inline>
+    (function () {
+      var t = localStorage.getItem('tyra-theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.style.colorScheme = t;
+    })();
+  </script>
+
+  <style is:global>
+    /* ─── Tyra coral — full primary token set ─── */
+
+    /* Light mode */
+    [data-theme=light],
+    :root:not([data-theme=dark]),
+    :host:not([data-theme=dark]) {
+      --pico-primary:                  #a5341c;
+      --pico-primary-background:       #bf3d20;
+      --pico-primary-border:           var(--pico-primary-background);
+      --pico-primary-underline:        rgba(165, 52, 28, 0.5);
+      --pico-primary-hover:            #7d2613;
+      --pico-primary-hover-background: #a5341c;
+      --pico-primary-hover-border:     var(--pico-primary-hover-background);
+      --pico-primary-hover-underline:  var(--pico-primary-hover);
+      --pico-primary-focus:            rgba(165, 52, 28, 0.375);
+      --pico-primary-inverse:          #fff;
     }
 
+    /* Dark mode — auto (system preference) */
+    @media only screen and (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        --pico-primary:                  #f78166;
+        --pico-primary-background:       #c74230;
+        --pico-primary-border:           var(--pico-primary-background);
+        --pico-primary-underline:        rgba(247, 129, 102, 0.5);
+        --pico-primary-hover:            #f9a491;
+        --pico-primary-hover-background: #d94e39;
+        --pico-primary-hover-border:     var(--pico-primary-hover-background);
+        --pico-primary-hover-underline:  var(--pico-primary-hover);
+        --pico-primary-focus:            rgba(247, 129, 102, 0.375);
+        --pico-primary-inverse:          #0d1117;
+      }
+    }
+
+    /* Dark mode — forced via data-theme="dark" */
+    [data-theme=dark] {
+      --pico-primary:                  #f78166;
+      --pico-primary-background:       #c74230;
+      --pico-primary-border:           var(--pico-primary-background);
+      --pico-primary-underline:        rgba(247, 129, 102, 0.5);
+      --pico-primary-hover:            #f9a491;
+      --pico-primary-hover-background: #d94e39;
+      --pico-primary-hover-border:     var(--pico-primary-hover-background);
+      --pico-primary-hover-underline:  var(--pico-primary-hover);
+      --pico-primary-focus:            rgba(247, 129, 102, 0.375);
+      --pico-primary-inverse:          #0d1117;
+    }
+
+    /* ─── Legacy variable aliases (other pages use these) ─── */
     :root {
-      --bg: #0d1117;
-      --bg-secondary: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #f78166;
-      --accent-dim: #c74230;
-      --green: #3fb950;
-      --blue: #58a6ff;
-      --code-bg: #1c2128;
+      --bg:         var(--pico-background-color);
+      --bg-secondary: var(--pico-card-sectioning-background-color);
+      --border:     var(--pico-muted-border-color);
+      --text:       var(--pico-color);
+      --text-muted: var(--pico-muted-color);
+      --accent:     var(--pico-primary);
+      --code-bg:    var(--pico-code-background-color);
+      --green:      #3fb950;
+      --blue:       #58a6ff;
     }
 
-    html, body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      font-size: 16px;
-      line-height: 1.65;
-      min-height: 100vh;
+    /* ─── Layout ─── */
+    body {
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
 
-    a {
-      color: var(--blue);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    nav {
-      background-color: var(--bg-secondary);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
+    body > header {
       position: sticky;
       top: 0;
       z-index: 100;
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      background: var(--pico-background-color);
+      padding: 0 1.5rem;
     }
 
-    .nav-inner {
+    body > header > nav {
       max-width: 1100px;
       margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 2rem;
+      padding: 0;
       height: 56px;
+    }
+
+    body > header > nav > ul {
+      margin: 0;
+      padding: 0;
     }
 
     .nav-logo {
       font-size: 1.25rem;
       font-weight: 700;
-      color: var(--accent);
-      text-decoration: none;
       letter-spacing: -0.02em;
+      color: var(--pico-primary) !important;
+      text-decoration: none !important;
     }
 
-    .nav-logo:hover {
-      text-decoration: none;
-      opacity: 0.85;
+    #theme-toggle {
+      background: none;
+      border: none;
+      padding: 0.25rem 0.4rem;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: var(--pico-border-radius);
+      line-height: 1;
+      color: var(--pico-muted-color);
+      transition: color var(--pico-transition);
     }
 
-    .nav-links {
-      display: flex;
-      gap: 1.5rem;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: color 0.15s;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-      text-decoration: none;
+    #theme-toggle:hover {
+      color: var(--pico-color);
     }
 
     main {
@@ -111,90 +150,23 @@ const { title, description = "Tyra — a language LLMs get right on the first tr
       padding: 2.5rem 1.5rem;
     }
 
-    footer {
-      background-color: var(--bg-secondary);
-      border-top: 1px solid var(--border);
-      padding: 1.25rem 1.5rem;
+    body > footer {
+      border-top: 1px solid var(--pico-muted-border-color);
       text-align: center;
-      color: var(--text-muted);
       font-size: 0.85rem;
-    }
-
-    footer a {
-      color: var(--text-muted);
-    }
-
-    footer a:hover {
-      color: var(--text);
-    }
-
-    /* Typography */
-    h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 1rem; }
-    h2 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; margin: 2rem 0 0.75rem; }
-    h3 { font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
-    p { margin-bottom: 1rem; }
-
-    /* Code */
-    code {
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 0.875em;
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.15em 0.4em;
-    }
-
-    pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      color: var(--pico-muted-color);
       padding: 1.25rem 1.5rem;
-      overflow-x: auto;
-      margin: 1rem 0;
     }
 
-    pre code {
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 0.9rem;
-      line-height: 1.6;
+    body > footer a {
+      color: var(--pico-muted-color);
     }
 
-    /* Tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.95rem;
-    }
-
-    th {
-      text-align: left;
-      padding: 0.6rem 1rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-weight: 600;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    td {
-      padding: 0.6rem 1rem;
-      border: 1px solid var(--border);
-    }
-
-    tr:hover td {
-      background: var(--bg-secondary);
-    }
-
-    /* Buttons */
+    /* ─── Button classes used in pages ─── */
     .btn {
       display: inline-block;
       padding: 0.6rem 1.2rem;
-      border-radius: 6px;
+      border-radius: var(--pico-border-radius);
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
@@ -208,40 +180,74 @@ const { title, description = "Tyra — a language LLMs get right on the first tr
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: #0d1117;
+      background: var(--pico-primary);
+      color: var(--pico-primary-inverse);
     }
 
     .btn-secondary {
-      background: var(--bg-secondary);
-      color: var(--text);
-      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--pico-color);
+      border: 1px solid var(--pico-muted-border-color);
     }
 
-    /* Responsive */
+    /* ─── Typography overrides ─── */
+    h1 { letter-spacing: -0.03em; }
+    h2 { letter-spacing: -0.02em; }
+
+    /* ─── Responsive ─── */
     @media (max-width: 640px) {
       h1 { font-size: 1.8rem; }
-      .nav-links { gap: 1rem; }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-inner">
-      <a href="/" class="nav-logo">Tyra</a>
-      <ul class="nav-links">
+  <header>
+    <nav>
+      <ul>
+        <li><a href="/" class="nav-logo">Tyra</a></li>
+      </ul>
+      <ul>
         <li><a href="/">Home</a></li>
         <li><a href="/playground">Playground</a></li>
         <li><a href="/leaderboard">Leaderboard</a></li>
-        <li><a href="/blog/why-float-has-no-eq">Blog</a></li>
+        <li><a href="https://dev.to/tyra-lang" target="_blank" rel="noopener">Blog ↗</a></li>
+        <li>
+          <button
+            id="theme-toggle"
+            type="button"
+            aria-label="Switch to light mode"
+          >🌙</button>
+        </li>
       </ul>
-    </div>
-  </nav>
+    </nav>
+  </header>
+
   <main>
     <slot />
   </main>
+
   <footer>
     MIT OR Apache-2.0 &middot; <a href="https://github.com/tyra-lang/tyra" target="_blank" rel="noopener">tyra-lang/tyra</a>
   </footer>
+
+  <script>
+    const btn = document.getElementById('theme-toggle') as HTMLButtonElement;
+
+    function applyTheme(theme: string) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+
+    // Sync button label with current theme (set by pre-paint script)
+    applyTheme(document.documentElement.getAttribute('data-theme') ?? 'light');
+
+    btn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      localStorage.setItem('tyra-theme', next);
+    });
+  </script>
 </body>
 </html>
