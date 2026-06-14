@@ -172,150 +172,139 @@ import Base from '../layouts/Base.astro';
     <div id="output-box"><span class="output-placeholder">Output will appear here after you run a program.</span></div>
   </div>
 
-  <script type="module">
-    const SAMPLES = {
+  <!-- Vite-processed: CodeMirror (npm) → editor init, exposes getEditorSource() globally -->
+  <script>
+    import { EditorView, basicSetup } from 'codemirror';
+    import { EditorState } from '@codemirror/state';
+    import { python } from '@codemirror/lang-python';
+    import { oneDark } from '@codemirror/theme-one-dark';
+
+    const SAMPLES: Record<string, string> = {
       hello: `fn main() -> Unit\n  println("Hello, Tyra!")\nend`,
       fib: `fn fib(n: Int) -> Int\n  if n <= 1\n    return n\n  end\n  return fib(n - 1) + fib(n - 2)\nend\n\nfn main() -> Unit\n  for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n    println("fib(#{i}) = #{fib(i)}")\n  end\nend`,
-      string: `import string\n\nfn main() -> Unit\n  let s = "hello, tyra!"\n  println(string.to_upper(s))\n  println(string.capitalize(s))\n  println(string.len(s))\nend`,
-      "map-set": `import map\nimport set\n\nfn main() -> Unit\n  let m = map.new()\n  let m = map.set(m, "a", 1)\n  let m = map.set(m, "b", 2)\n  println("a=#{map.get(m, \"a\")}")\n\n  let s = set.new()\n  let s = set.add(s, "x")\n  let s = set.add(s, "y")\n  println("has_x=#{set.has(s, \"x\")}")\nend`,
-      json: `import json\n\nfn main() -> Unit\n  let result = json.parse("{\\"name\\":\\"Tyra\\",\\"version\\":1}")\n  match result\n    Ok(doc) =>\n      println("name=#{json.get(doc, "name")}")\n    Err(e) =>\n      println("error: #{e.message}")\n  end\nend`,
+      string: `import string\n\nfn main() -> Unit\n  let s = "hello, tyra!"\n  println(string.to_ascii_upper(s))\n  println(string.reverse(s))\n  println(string.len(s))\nend`,
+      "map-set": `import set\n\nfn main() -> Unit\n  let m: Map<String, Int> = {"a": 1, "b": 2}\n  match m.get("a")\n  when Some(v)\n    println("a=#{v}")\n  when None\n    println("not found")\n  end\n  let s: Set<String> = set.new()\n  let s = s.insert("x")\n  let s = s.insert("y")\n  let has_x = s.contains("x")\n  println("has_x=#{has_x}")\nend`,
+      json: `import json\n\nfn main() -> Unit\n  let text = "{\\"name\\":\\"Tyra\\",\\"version\\":1}"\n  match json.parse(text)\n  when Ok(doc)\n    match doc.get(key: "name")\n    when Some(v)\n      match v.as_string()\n      when Some(s)\n        println("name=#{s}")\n      when None\n        println("not a string")\n      end\n    when None\n      println("no name key")\n    end\n  when Err(_)\n    println("parse error")\n  end\nend`,
     };
 
-    let wasmRun = null;
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: SAMPLES['hello'],
+        extensions: [
+          basicSetup,
+          python(),
+          oneDark,
+          EditorView.theme({
+            '&': { height: '320px', fontSize: '14px' },
+            '.cm-scroller': { overflow: 'auto', fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace' },
+          }),
+        ],
+      }),
+      parent: document.getElementById('editor-container')!,
+    });
 
-    async function loadWasm() {
-      const statusEl = document.getElementById('wasm-status');
-      const runBtn = document.getElementById('run-btn');
-      try {
-        const wasmResp = await fetch('/wasm/tyra_wasm_bg.wasm');
-        if (!wasmResp.ok) throw new Error(`WASM fetch failed: ${wasmResp.status}`);
-        const wasmBuffer = await wasmResp.arrayBuffer();
-        const wasmModule = await import('/wasm/tyra_wasm.js');
-        const init = wasmModule.default;
-        await init({ module_or_path: wasmBuffer });
-        wasmRun = wasmModule.run;
-        statusEl.textContent = 'Ready';
-        statusEl.style.color = 'var(--green)';
-        runBtn.disabled = false;
-      } catch (err) {
-        statusEl.textContent = 'WASM unavailable (build from source to use)';
-        statusEl.style.color = 'var(--text-muted)';
-        runBtn.disabled = false;
-        runBtn.onclick = () => {
-          showOutput({ error: true, text: 'WASM runtime not loaded.\n\nTo use the playground locally:\n  cd compiler/crates/tyra-wasm && wasm-pack build --target web\n  cp pkg/tyra_wasm.js pkg/tyra_wasm_bg.wasm ../../website/public/wasm/' });
-        };
-      }
-    }
+    document.getElementById('sample-select')!.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      const code = SAMPLES[val] || '';
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: code } });
+    });
 
-    async function initEditor() {
-      const { EditorView, basicSetup } = await import('https://esm.sh/@codemirror/basic-setup@0.20.0?bundle');
-      const { EditorState } = await import('https://esm.sh/@codemirror/state@6.4.1');
-      const { python } = await import('https://esm.sh/@codemirror/lang-python@6.1.6');
-      const { oneDark } = await import('https://esm.sh/@codemirror/theme-one-dark@6.1.2');
+    // Expose source accessor for the WASM script
+    (window as any).__getEditorSource = () => view.state.doc.toString();
+  </script>
 
-      const view = new EditorView({
-        state: EditorState.create({
-          doc: SAMPLES['hello'],
-          extensions: [
-            basicSetup,
-            python(),
-            oneDark,
-            EditorView.theme({
-              '&': { height: '320px', fontSize: '14px' },
-              '.cm-scroller': { overflow: 'auto', fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace' },
-            }),
-          ],
-        }),
-        parent: document.getElementById('editor-container'),
-      });
+  <!-- is:inline: WASM loading from /public — cannot be Vite-processed -->
+  <script is:inline>
+    (function () {
+      var wasmRun = null;
 
-      document.getElementById('sample-select').addEventListener('change', (e) => {
-        const code = SAMPLES[e.target.value] || '';
-        view.dispatch({
-          changes: { from: 0, to: view.state.doc.length, insert: code },
-        });
-      });
-
-      document.getElementById('run-btn').addEventListener('click', () => {
-        const source = view.state.doc.toString();
-        runCode(source);
-      });
-
-      return view;
-    }
-
-    function runCode(source) {
-      if (!wasmRun) {
-        showOutput({ error: true, text: 'WASM runtime not available.' });
-        return;
-      }
-      try {
-        const resultJson = wasmRun(source);
-        const result = JSON.parse(resultJson);
-        renderResult(result);
-      } catch (err) {
-        showOutput({ error: true, text: `Internal error: ${err.message}` });
-      }
-    }
-
-    function renderResult(result) {
-      const box = document.getElementById('output-box');
-      box.innerHTML = '';
-
-      const exitCode = result.exit_code ?? 0;
-      const stdout = result.stdout ?? '';
-      const stderr = result.stderr ?? '';
-      const diagnostics = result.diagnostics ?? [];
-
-      const hasError = exitCode !== 0 || stderr.length > 0 || diagnostics.length > 0;
-      box.className = hasError ? 'error' : (stdout.length > 0 ? 'success' : '');
-
-      for (const diag of diagnostics) {
-        const line = document.createElement('div');
-        line.className = 'diag-line';
-        const span = diag.spans?.[0];
-        const loc = span != null ? ` (line ${span.line}:${span.col})` : '';
-        line.textContent = `E${diag.code}: ${diag.message}${loc}`;
-        box.appendChild(line);
+      async function loadWasm() {
+        var statusEl = document.getElementById('wasm-status');
+        var runBtn = document.getElementById('run-btn');
+        try {
+          var wasmResp = await fetch('/wasm/tyra_wasm_bg.wasm');
+          if (!wasmResp.ok) throw new Error('WASM fetch failed: ' + wasmResp.status);
+          var wasmBuffer = await wasmResp.arrayBuffer();
+          var wasmModule = await import('/wasm/tyra_wasm.js');
+          await wasmModule.default({ module_or_path: wasmBuffer });
+          wasmRun = wasmModule.run;
+          statusEl.textContent = 'Ready';
+          statusEl.style.color = 'var(--green)';
+          runBtn.disabled = false;
+        } catch (err) {
+          statusEl.textContent = 'WASM unavailable (build from source to use)';
+          statusEl.style.color = 'var(--text-muted)';
+          runBtn.disabled = false;
+          runBtn.addEventListener('click', function () {
+            showOutput({ error: true, text: 'WASM runtime not loaded.\n\nTo use the playground locally:\n  cd compiler/crates/tyra-wasm && wasm-pack build --target web\n  cp pkg/tyra_wasm.js pkg/tyra_wasm_bg.wasm ../../website/public/wasm/' });
+          });
+        }
       }
 
-      if (stdout.length > 0) {
-        const div = document.createElement('div');
-        div.className = 'stdout-text';
-        div.textContent = stdout;
+      function runCode(source) {
+        if (!wasmRun) { showOutput({ error: true, text: 'WASM runtime not available.' }); return; }
+        try {
+          var result = JSON.parse(wasmRun(source));
+          renderResult(result);
+        } catch (err) {
+          showOutput({ error: true, text: 'Internal error: ' + err.message });
+        }
+      }
+
+      function renderResult(result) {
+        var box = document.getElementById('output-box');
+        box.innerHTML = '';
+        var exitCode = result.exit_code ?? 0;
+        var stdout = result.stdout ?? '';
+        var stderr = result.stderr ?? '';
+        var diagnostics = result.diagnostics ?? [];
+        var hasError = exitCode !== 0 || stderr.length > 0 || diagnostics.length > 0;
+        box.className = hasError ? 'error' : (stdout.length > 0 ? 'success' : '');
+        for (var d of diagnostics) {
+          var line = document.createElement('div');
+          line.className = 'diag-line';
+          var span = d.spans?.[0];
+          line.textContent = 'E' + d.code + ': ' + d.message + (span != null ? ' (line ' + span.line + ':' + span.col + ')' : '');
+          box.appendChild(line);
+        }
+        if (stdout.length > 0) {
+          var div = document.createElement('div');
+          div.className = 'stdout-text';
+          div.textContent = stdout;
+          box.appendChild(div);
+        }
+        if (stderr.length > 0) {
+          var div = document.createElement('div');
+          div.className = 'stderr-text';
+          div.textContent = stderr;
+          box.appendChild(div);
+        }
+        if (exitCode !== 0) {
+          var div = document.createElement('div');
+          div.className = 'exit-code';
+          div.textContent = 'exit code: ' + exitCode;
+          box.appendChild(div);
+        }
+        if (box.innerHTML === '') box.innerHTML = '<span class="output-placeholder">Program exited with no output.</span>';
+      }
+
+      function showOutput({ error, text }) {
+        var box = document.getElementById('output-box');
+        box.className = error ? 'error' : 'success';
+        box.innerHTML = '';
+        var div = document.createElement('div');
+        div.className = error ? 'stderr-text' : 'stdout-text';
+        div.textContent = text;
         box.appendChild(div);
       }
 
-      if (stderr.length > 0) {
-        const div = document.createElement('div');
-        div.className = 'stderr-text';
-        div.textContent = stderr;
-        box.appendChild(div);
-      }
+      document.getElementById('run-btn').addEventListener('click', function () {
+        var getSource = window.__getEditorSource;
+        if (!getSource) { showOutput({ error: true, text: 'Editor not initialized.' }); return; }
+        runCode(getSource());
+      });
 
-      if (exitCode !== 0) {
-        const div = document.createElement('div');
-        div.className = 'exit-code';
-        div.textContent = `exit code: ${exitCode}`;
-        box.appendChild(div);
-      }
-
-      if (box.innerHTML === '') {
-        box.innerHTML = '<span class="output-placeholder">Program exited with no output.</span>';
-      }
-    }
-
-    function showOutput({ error, text }) {
-      const box = document.getElementById('output-box');
-      box.className = error ? 'error' : 'success';
-      const div = document.createElement('div');
-      div.className = error ? 'stderr-text' : 'stdout-text';
-      div.textContent = text;
-      box.innerHTML = '';
-      box.appendChild(div);
-    }
-
-    loadWasm();
-    initEditor();
+      loadWasm();
+    })();
   </script>
 </Base>
