@@ -1,0 +1,119 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Tyra vs Crystal" description="Comparing Tyra and Crystal for LLM code generation — pass rates, readability, tradeoffs">
+  <style>
+    .compare-header { margin-bottom: 2rem; }
+    .compare-header p { color: var(--text-muted); max-width: 680px; }
+    .rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .rate-card.tyra { border-color: var(--accent); }
+    .rate-value { font-size: 2.5rem; font-weight: 700; }
+    .rate-card.tyra .rate-value { color: var(--accent); }
+    .rate-lang { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .rate-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 700px) { .side-by-side { grid-template-columns: 1fr; } }
+    .code-block-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.4rem; }
+    .tradeoff-list { color: var(--text-muted); padding-left: 1.5rem; font-size: 0.925rem; }
+    .tradeoff-list li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .honest-note { background: var(--bg-secondary); border-left: 3px solid var(--border); padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; color: var(--text-muted); font-size: 0.875rem; margin: 1.5rem 0; }
+  </style>
+
+  <div class="compare-header">
+    <h1>Tyra vs Crystal</h1>
+    <p>
+      Crystal is an excellent language — compiled, statically typed, with a Ruby-inspired syntax that LLMs already know well.
+      This comparison is about a specific tradeoff: LLM code generation ergonomics, with particular attention to spec-driven generation for new languages.
+    </p>
+  </div>
+
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-value">96.0%</div>
+      <div class="rate-lang">Crystal</div>
+      <div class="rate-note">Single seed, no spec injection needed</div>
+    </div>
+    <div class="rate-card tyra">
+      <div class="rate-value">88.7%</div>
+      <div class="rate-lang">Tyra + spec</div>
+      <div class="rate-note">Multi-seed mean (3 seeds), spec injected as system prompt</div>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Crystal's 96% reflects years of training data. Tyra's 88.7% is achieved with <strong>zero training data</strong> —
+    only the language spec injected into the prompt. The gap (7.3 percentage points) closes significantly
+    when you account for that asymmetry.
+  </p>
+
+  <h2>Side-by-side: FizzBuzz</h2>
+
+  <div class="side-by-side">
+    <div>
+      <div class="code-block-label">Tyra</div>
+      <pre><code>fn main() -> Unit
+  for i in 1..101
+    if i % 15 == 0
+      println("FizzBuzz")
+    elsif i % 3 == 0
+      println("Fizz")
+    elsif i % 5 == 0
+      println("Buzz")
+    else
+      println(i)
+    end
+  end
+end</code></pre>
+    </div>
+    <div>
+      <div class="code-block-label">Crystal</div>
+      <pre><code>1.upto(100) do |i|
+  if i % 15 == 0
+    puts "FizzBuzz"
+  elsif i % 3 == 0
+    puts "Fizz"
+  elsif i % 5 == 0
+    puts "Buzz"
+  else
+    puts i
+  end
+end</code></pre>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Both are readable. Crystal's block syntax is familiar to Ruby developers. Tyra's explicit
+    <code>fn main()</code> entry point and <code>end</code> blocks make the structure unambiguous
+    for an LLM reading only the spec.
+  </p>
+
+  <h2>What the spec injection result means</h2>
+
+  <p style="color: var(--text-muted);">
+    Crystal LLMs have seen thousands of Crystal programs during training.
+    When you write a Tyra program, the model has never seen the language — but with the spec injected,
+    it still generates passing code 88.7% of the time on the first try.
+    That's the experiment: <em>how well does the spec describe the language?</em>
+  </p>
+
+  <h2>Honest tradeoffs</h2>
+
+  <ul class="tradeoff-list">
+    <li><strong>Crystal wins:</strong> Mature ecosystem, shards library manager, proven production use, 96% LLM pass rate without any spec injection.</li>
+    <li><strong>Crystal wins:</strong> Larger community, more learning resources, existing tooling (LSP, debugger, formatter).</li>
+    <li><strong>Tyra advantage:</strong> Float has no <code>==</code>, eliminating a class of NaN bugs at compile time. Crystal inherits Ruby's IEEE 754 semantics.</li>
+    <li><strong>Tyra advantage:</strong> The ability system (<code>Eq</code>, <code>Hash</code>, <code>Ord</code>, <code>Debug</code>) is simpler than Crystal's comparable module system for LLM reasoning.</li>
+    <li><strong>Tyra is new:</strong> Smaller ecosystem, fewer libraries, less production validation. Choose Crystal for production work today.</li>
+  </ul>
+
+  <div class="honest-note">
+    Crystal is an excellent language. This page is not arguing you should replace Crystal with Tyra.
+    It's showing what's possible when a language is designed from the ground up around spec-driven LLM generation.
+  </div>
+
+  <p style="color: var(--text-muted);">
+    <a href="/leaderboard">View full leaderboard &rarr;</a>
+  </p>
+</Base>

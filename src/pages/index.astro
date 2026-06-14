@@ -1,0 +1,204 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Home" description="Tyra — a language LLMs get right on the first try">
+  <style>
+    .hero {
+      text-align: center;
+      padding: 4rem 0 3rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+
+    .hero-logo {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.04em;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-tagline {
+      font-size: 1.5rem;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto 2rem;
+      line-height: 1.7;
+    }
+
+    .hero-sub strong {
+      color: var(--accent);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .section {
+      margin-bottom: 3.5rem;
+    }
+
+    .section-title {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .highlight-row td:first-child {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .badge-tyra {
+      background: var(--accent);
+      color: #0d1117;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    .leaderboard-note {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .view-more {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  </style>
+
+  <div class="hero">
+    <div class="hero-logo">Tyra</div>
+    <div class="hero-tagline">The language LLMs get right on the first try</div>
+    <p class="hero-sub">
+      Tyra is a statically-typed, Ruby-inspired language that compiles to native binaries via LLVM.
+      With spec injection, Claude achieves an <strong>88.7% mean pass rate</strong> across 100 tasks
+      on first attempt — a result achieved with zero prior training data on Tyra.
+    </p>
+    <div class="hero-actions">
+      <a href="/playground" class="btn btn-primary">Try it in the Playground &rarr;</a>
+      <a href="https://github.com/tyra-lang/tyra" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title">Code preview</div>
+      <pre><code>fn fib(n: Int) -&gt; Int
+  if n &lt;= 1
+    return n
+  end
+  return fib(n - 1) + fib(n - 2)
+end
+
+fn main() -&gt; Unit
+  for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    println("fib(#{"{"}i{"}"}) = #{"{"}fib(i){"}"}")
+  end
+end</code></pre>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+        Clean, readable syntax. Immutable-by-default. Strong static types.
+        <a href="/playground">Run it live &rarr;</a>
+      </p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">LLM pass rate benchmark</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Language</th>
+            <th>Pass rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ruby</td>
+            <td>99.0%</td>
+          </tr>
+          <tr>
+            <td>Crystal</td>
+            <td>96.0%</td>
+          </tr>
+          <tr class="highlight-row">
+            <td>
+              Tyra + spec
+              <span class="badge-tyra">NEW</span>
+            </td>
+            <td><strong>88.7%</strong></td>
+          </tr>
+          <tr>
+            <td>Go</td>
+            <td>81.0%</td>
+          </tr>
+          <tr>
+            <td>V</td>
+            <td>49.0%</td>
+          </tr>
+          <tr>
+            <td>Gleam</td>
+            <td>37.0%</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="leaderboard-note">
+        "Tyra + spec" injects the language spec as a system prompt. Other languages use no special prompt.
+        100 tasks, Claude, multi-seed mean.
+      </p>
+      <a href="/leaderboard" class="view-more">View full leaderboard &rarr;</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Design goals</div>
+    <div class="two-col">
+      <div>
+        <h3>Spec-driven generation</h3>
+        <p style="color: var(--text-muted);">
+          Tyra's entire language spec fits in a single context window. Inject it, and an LLM
+          generates correct code without having seen the language before. The 88.7% result
+          is achieved with zero training data on Tyra — only the spec.
+        </p>
+      </div>
+      <div>
+        <h3>Type system that catches real bugs</h3>
+        <p style="color: var(--text-muted);">
+          No <code>==</code> on <code>Float</code>, no <code>Map&lt;Float, V&gt;</code>,
+          no null. The compiler rejects entire classes of bugs before they reach the test runner.
+          <a href="/blog/why-float-has-no-eq">Why Float has no == &rarr;</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</Base>

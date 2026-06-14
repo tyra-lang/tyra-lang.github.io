@@ -1,0 +1,181 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Why Float Has No ==" description="Why Tyra's Float type has no equality operator — and what to use instead">
+  <div class="blog-post">
+    <h1>Why <code>Float</code> Has No <code>==</code> in Tyra</h1>
+    <div class="blog-meta">
+      Published on <a href="https://dev.to/tyra-lang/why-float-has-no-eq" target="_blank" rel="noopener">dev.to</a> — cross-posted here
+    </div>
+
+    <div class="cross-post-note">
+      This article also appears on <a href="https://dev.to/tyra-lang/why-float-has-no-eq" target="_blank" rel="noopener">dev.to/tyra-lang</a>.
+    </div>
+
+    <p>When you write <code>1.0 == 1.0</code> in Tyra, you get a compile error.</p>
+
+    <div class="error-block">error[E0305]: Float does not satisfy the Eq ability
+  --> src/main.ty:3:8
+   |
+ 3 |   if a == 1.0
+   |        ^^ Float has no Eq
+   |
+   = help: use float.eq(a, 1.0) for IEEE 754 equality,
+           or float.approx_eq(a, b, epsilon: 1e-9) for tolerance comparison</div>
+
+    <p>This is intentional. Here's why.</p>
+
+    <hr />
+
+    <h2>The NaN problem</h2>
+
+    <p>IEEE 754 — the floating-point standard every language uses — defines that <code>NaN != NaN</code>. Always. No exceptions.</p>
+
+    <pre><code># Python
+x = float('nan')
+x == x  # False</code></pre>
+
+    <pre><code>// Go
+x := math.NaN()
+x == x  // false</code></pre>
+
+    <p>This rule exists for numerical computing reasons (NaN propagation semantics), but it breaks one of the most fundamental assumptions in programming: <strong>any value equals itself</strong>.</p>
+
+    <p>In every language that gives <code>Float</code> a standard equality operator, you have a class of values called <strong>reflexivity-breaking values</strong>: things where <code>a == a</code> is false. Most programmers don't think about this until they hit a bug.</p>
+
+    <hr />
+
+    <h2>What breaks when Float has Eq</h2>
+
+    <h3>Structural equality on compound types</h3>
+
+    <p>Tyra has <code>value</code> types — immutable record types that get structural equality: two <code>Point</code>s are equal if all their fields are equal.</p>
+
+    <pre><code>value Point
+  x: Float
+  y: Float
+end</code></pre>
+
+    <p>If <code>Float</code> had <code>Eq</code>, Tyra would auto-derive <code>Eq</code> for <code>Point</code>. But then:</p>
+
+    <pre><code>let p = Point(x: 0.0 / 0.0, y: 1.0)  # x is NaN
+p == p  # What should this return?</code></pre>
+
+    <p>IEEE 754 says <code>NaN != NaN</code>, so field-by-field comparison gives <code>false</code>.
+    Structural equality says two identical objects are equal, so it should be <code>true</code>.</p>
+
+    <p>These two invariants cannot both hold. Pick one and you're lying to the programmer about the other.</p>
+
+    <h3>Hash maps and sets</h3>
+
+    <p>In Python and JavaScript, using a float as a dictionary key works until it doesn't:</p>
+
+    <pre><code>{`d = {}
+d[float('nan')] = 1
+d[float('nan')] = 2
+len(d)  # 2 — two different NaN keys!`}</code></pre>
+
+    <p>This happens because <code>hash(nan) == hash(nan)</code> but <code>nan != nan</code>, so two NaN keys are considered distinct. The HashMap contract (<code>a == b</code> implies <code>hash(a) == hash(b)</code>) is violated silently.</p>
+
+    <p>In Tyra, <code>Map&lt;Float, V&gt;</code> is a <strong>compile error</strong>. The bug class doesn't exist.</p>
+
+    <hr />
+
+    <h2>The three ways to handle this</h2>
+
+    <p>Every language with a static type system faces this problem. The mainstream options:</p>
+
+    <h3>Option 1: IEEE 754 semantics (most languages)</h3>
+
+    <p><code>Float == Float</code> works, <code>NaN != NaN</code>. Reflexivity breaks for NaN values.</p>
+
+    <p>This is what C, Java, JavaScript, Python, and Go do. It's pragmatic and familiar, but it leaks IEEE 754 semantics into the equality abstraction. Bugs involving NaN are notoriously hard to trace.</p>
+
+    <h3>Option 2: Two-tier equality (Rust)</h3>
+
+    <p>Rust splits the concept: <code>PartialEq</code> means "might not be reflexive" (Float qualifies), <code>Eq</code> means "always reflexive" (Float does not).</p>
+
+    <pre><code>{`// Rust: Point derives PartialEq but NOT Eq
+#[derive(PartialEq)]
+struct Point { x: f64, y: f64 }`}</code></pre>
+
+    <p>This is honest and precise, but it adds complexity. <code>PartialEq</code> vs <code>Eq</code> is one of Rust's most confusing distinctions for beginners — two equality traits, two sets of bounds in generics, two different things to explain.</p>
+
+    <h3>Option 3: No Eq for Float (Tyra)</h3>
+
+    <p><code>Float</code> simply does not satisfy <code>Eq</code>. The operator <code>==</code> is only available for types that provably satisfy reflexivity.</p>
+
+    <p>Explicit comparison functions are available:</p>
+
+    <pre><code>import float
+
+float.eq(a, b)                        # IEEE 754: NaN != NaN, 0.0 == -0.0
+float.approx_eq(a, b, epsilon: 1e-9)  # tolerance comparison
+float.is_nan(a)                        # explicit NaN check</code></pre>
+
+    <hr />
+
+    <h2>Why this is the right tradeoff for Tyra</h2>
+
+    <p>Tyra's target domain is <strong>web backends, CLI tools, and business applications</strong> — not scientific computing or graphics engines. In that domain:</p>
+
+    <ul>
+      <li>Money should be <code>Int</code> (cents), never <code>Float</code></li>
+      <li>JSON numbers that need exact comparison are usually integers</li>
+      <li>The legitimate use cases for float equality are rare and should be explicit</li>
+    </ul>
+
+    <p>The error message points you to the right function. The type system forces you to think about what kind of float comparison you actually want — not just reach for <code>==</code> and hope NaN never shows up.</p>
+
+    <hr />
+
+    <h2>What this enables: AI-friendly design</h2>
+
+    <p>One of Tyra's goals is to be a language where LLMs generate correct code on first try, without debugging cycles. Float equality traps are a significant source of subtle bugs in LLM-generated code. The model writes <code>a == b</code> because that's the pattern it learned from Python and JavaScript. The Tyra compiler rejects it and explains the alternative.</p>
+
+    <p>In our benchmark (100 tasks, Claude generating code from the language spec), Tyra achieves an <strong>88.7% mean pass rate across 3 seeds</strong>. This exceeds Go's existing seed-1 point estimate (81%), though the two figures use different methodologies so a same-condition comparison is still pending. Design choices like this one — where the type system catches a common bug class before the test runner does — are consistent with that result.</p>
+
+    <hr />
+
+    <h2>The ability system</h2>
+
+    <p>For those unfamiliar with Tyra: <strong>abilities</strong> are Tyra's type classes. They work like Rust traits or Haskell type classes, but the name distinguishes them from Tyra's <code>trait</code> keyword, which is the mechanism for interface polymorphism — a separate concept.</p>
+
+    <p>The four core abilities are <code>Eq</code>, <code>Hash</code>, <code>Ord</code>, and <code>Debug</code>. Auto-derivation works by structural inspection: a <code>value</code> or <code>data</code> type gets <code>Eq</code> automatically if and only if all its fields satisfy <code>Eq</code>. Since <code>Float</code> doesn't satisfy <code>Eq</code>, no type containing a <code>Float</code> field gets <code>Eq</code> for free.</p>
+
+    <p>This propagation rule is intentionally simple and consistent: no exceptions, no special cases. One rule covers everything.</p>
+
+    <hr />
+
+    <h2>The tradeoff is real</h2>
+
+    <p>I'm not going to pretend there's no cost. Writing <code>float.approx_eq(result, expected, epsilon: 1e-9)</code> in a test is more verbose than <code>result == expected</code>. If you're writing numerical algorithms, the absence of <code>==</code> on floats is genuinely inconvenient.</p>
+
+    <p>But the alternative is a category of bugs that are hard to find, hard to name, and hard to explain — to a reviewer, a type checker, or an LLM. Tyra trades some verbosity to eliminate the bug class entirely.</p>
+
+    <p>If you're building the next numerical solver or game engine, Tyra is probably not your language. If you're building a web API or a CLI tool, float equality probably isn't something you need — and if you do need it, the error message tells you exactly what to use instead.</p>
+
+    <hr />
+
+    <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">
+      Tyra is an open-source, Ruby-inspired language that compiles to native binaries via LLVM.
+      Source: <a href="https://github.com/tyra-lang/tyra" target="_blank" rel="noopener">github.com/tyra-lang/tyra</a> — feedback welcome.
+    </p>
+  </div>
+</Base>
+
+<style>
+  .blog-post { max-width: 720px; }
+  .blog-meta { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .blog-post h1 { margin-bottom: 0.5rem; }
+  .blog-post h2 { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .blog-post h3 { margin-top: 1.75rem; color: var(--text); }
+  .blog-post p { color: var(--text-muted); line-height: 1.75; }
+  .blog-post p strong { color: var(--text); }
+  .blog-post ul, .blog-post ol { color: var(--text-muted); padding-left: 1.5rem; margin-bottom: 1rem; }
+  .blog-post li { margin-bottom: 0.4rem; line-height: 1.7; }
+  .blog-post hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+  .blog-post blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--text-muted); font-style: italic; margin: 1.5rem 0; }
+  .error-block { background: var(--code-bg); border: 1px solid #f85149; border-radius: 8px; padding: 1.25rem 1.5rem; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.875rem; line-height: 1.6; color: #f85149; margin: 1rem 0; white-space: pre-wrap; }
+  .cross-post-note { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 2rem; }
+</style>

@@ -1,0 +1,320 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Playground" description="Try Tyra in your browser — interactive playground with WASM runtime">
+  <style>
+    .playground-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .playground-note {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .playground-note strong {
+      color: var(--text);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    #sample-select {
+      background: var(--bg-secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    #sample-select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    #run-btn {
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    #run-btn:hover {
+      opacity: 0.85;
+    }
+
+    #run-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #wasm-status {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    #editor-container {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      min-height: 320px;
+      font-size: 14px;
+    }
+
+    .output-section {
+      margin-top: 1rem;
+    }
+
+    .output-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    #output-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      min-height: 80px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    #output-box.success {
+      border-color: #3fb950;
+    }
+
+    #output-box.error {
+      border-color: #f85149;
+    }
+
+    .output-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .diag-line {
+      color: #f85149;
+    }
+
+    .stdout-text {
+      color: #3fb950;
+    }
+
+    .stderr-text {
+      color: #f85149;
+    }
+
+    .exit-code {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+
+  <div class="playground-header">
+    <h1>Playground</h1>
+  </div>
+
+  <div class="playground-note">
+    <strong>Bundled stdlib:</strong> string, list, float, json, map, set &nbsp;&middot;&nbsp;
+    <strong>Not available in browser:</strong> io, fs, http (sandbox restriction)
+  </div>
+
+  <div class="controls">
+    <label for="sample-select">Sample:</label>
+    <select id="sample-select">
+      <option value="hello">Hello World</option>
+      <option value="fib">Fibonacci</option>
+      <option value="string">String operations</option>
+      <option value="map-set">Map + Set</option>
+      <option value="json">JSON parsing</option>
+    </select>
+    <button id="run-btn" disabled>Run &#9658;</button>
+    <span id="wasm-status">Loading WASM...</span>
+  </div>
+
+  <div id="editor-container"></div>
+
+  <div class="output-section">
+    <div class="output-label">Output</div>
+    <div id="output-box"><span class="output-placeholder">Output will appear here after you run a program.</span></div>
+  </div>
+
+  <script type="module">
+    const SAMPLES = {
+      hello: `fn main() -> Unit\n  println("Hello, Tyra!")\nend`,
+      fib: `fn fib(n: Int) -> Int\n  if n <= 1\n    return n\n  end\n  return fib(n - 1) + fib(n - 2)\nend\n\nfn main() -> Unit\n  for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n    println("fib(#{i}) = #{fib(i)}")\n  end\nend`,
+      string: `import string\n\nfn main() -> Unit\n  let s = "hello, tyra!"\n  println(string.to_upper(s))\n  println(string.capitalize(s))\n  println(string.len(s))\nend`,
+      "map-set": `import map\nimport set\n\nfn main() -> Unit\n  let m = map.new()\n  let m = map.set(m, "a", 1)\n  let m = map.set(m, "b", 2)\n  println("a=#{map.get(m, \"a\")}")\n\n  let s = set.new()\n  let s = set.add(s, "x")\n  let s = set.add(s, "y")\n  println("has_x=#{set.has(s, \"x\")}")\nend`,
+      json: `import json\n\nfn main() -> Unit\n  let result = json.parse("{\\"name\\":\\"Tyra\\",\\"version\\":1}")\n  match result\n    Ok(doc) =>\n      println("name=#{json.get(doc, "name")}")\n    Err(e) =>\n      println("error: #{e.message}")\n  end\nend`,
+    };
+
+    let wasmRun = null;
+
+    async function loadWasm() {
+      const statusEl = document.getElementById('wasm-status');
+      const runBtn = document.getElementById('run-btn');
+      try {
+        const wasmResp = await fetch('/wasm/tyra_wasm_bg.wasm');
+        if (!wasmResp.ok) throw new Error(`WASM fetch failed: ${wasmResp.status}`);
+        const wasmBuffer = await wasmResp.arrayBuffer();
+        const wasmModule = await import('/wasm/tyra_wasm.js');
+        const init = wasmModule.default;
+        await init({ module_or_path: wasmBuffer });
+        wasmRun = wasmModule.run;
+        statusEl.textContent = 'Ready';
+        statusEl.style.color = 'var(--green)';
+        runBtn.disabled = false;
+      } catch (err) {
+        statusEl.textContent = 'WASM unavailable (build from source to use)';
+        statusEl.style.color = 'var(--text-muted)';
+        runBtn.disabled = false;
+        runBtn.onclick = () => {
+          showOutput({ error: true, text: 'WASM runtime not loaded.\n\nTo use the playground locally:\n  cd compiler/crates/tyra-wasm && wasm-pack build --target web\n  cp pkg/tyra_wasm.js pkg/tyra_wasm_bg.wasm ../../website/public/wasm/' });
+        };
+      }
+    }
+
+    async function initEditor() {
+      const { EditorView, basicSetup } = await import('https://esm.sh/@codemirror/basic-setup@0.20.0?bundle');
+      const { EditorState } = await import('https://esm.sh/@codemirror/state@6.4.1');
+      const { python } = await import('https://esm.sh/@codemirror/lang-python@6.1.6');
+      const { oneDark } = await import('https://esm.sh/@codemirror/theme-one-dark@6.1.2');
+
+      const view = new EditorView({
+        state: EditorState.create({
+          doc: SAMPLES['hello'],
+          extensions: [
+            basicSetup,
+            python(),
+            oneDark,
+            EditorView.theme({
+              '&': { height: '320px', fontSize: '14px' },
+              '.cm-scroller': { overflow: 'auto', fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace' },
+            }),
+          ],
+        }),
+        parent: document.getElementById('editor-container'),
+      });
+
+      document.getElementById('sample-select').addEventListener('change', (e) => {
+        const code = SAMPLES[e.target.value] || '';
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: code },
+        });
+      });
+
+      document.getElementById('run-btn').addEventListener('click', () => {
+        const source = view.state.doc.toString();
+        runCode(source);
+      });
+
+      return view;
+    }
+
+    function runCode(source) {
+      if (!wasmRun) {
+        showOutput({ error: true, text: 'WASM runtime not available.' });
+        return;
+      }
+      try {
+        const resultJson = wasmRun(source);
+        const result = JSON.parse(resultJson);
+        renderResult(result);
+      } catch (err) {
+        showOutput({ error: true, text: `Internal error: ${err.message}` });
+      }
+    }
+
+    function renderResult(result) {
+      const box = document.getElementById('output-box');
+      box.innerHTML = '';
+
+      const exitCode = result.exit_code ?? 0;
+      const stdout = result.stdout ?? '';
+      const stderr = result.stderr ?? '';
+      const diagnostics = result.diagnostics ?? [];
+
+      const hasError = exitCode !== 0 || stderr.length > 0 || diagnostics.length > 0;
+      box.className = hasError ? 'error' : (stdout.length > 0 ? 'success' : '');
+
+      for (const diag of diagnostics) {
+        const line = document.createElement('div');
+        line.className = 'diag-line';
+        const loc = diag.line != null ? ` (line ${diag.line}:${diag.col ?? 0})` : '';
+        line.textContent = `E${diag.code}: ${diag.message}${loc}`;
+        box.appendChild(line);
+      }
+
+      if (stdout.length > 0) {
+        const div = document.createElement('div');
+        div.className = 'stdout-text';
+        div.textContent = stdout;
+        box.appendChild(div);
+      }
+
+      if (stderr.length > 0) {
+        const div = document.createElement('div');
+        div.className = 'stderr-text';
+        div.textContent = stderr;
+        box.appendChild(div);
+      }
+
+      if (exitCode !== 0) {
+        const div = document.createElement('div');
+        div.className = 'exit-code';
+        div.textContent = `exit code: ${exitCode}`;
+        box.appendChild(div);
+      }
+
+      if (box.innerHTML === '') {
+        box.innerHTML = '<span class="output-placeholder">Program exited with no output.</span>';
+      }
+    }
+
+    function showOutput({ error, text }) {
+      const box = document.getElementById('output-box');
+      box.className = error ? 'error' : 'success';
+      const div = document.createElement('div');
+      div.className = error ? 'stderr-text' : 'stdout-text';
+      div.textContent = text;
+      box.innerHTML = '';
+      box.appendChild(div);
+    }
+
+    loadWasm();
+    initEditor();
+  </script>
+</Base>

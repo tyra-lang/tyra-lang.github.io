@@ -1,0 +1,123 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const rubyCode = `scores = [85, 92, 78, 96, 61, 74]
+passing = scores.select { |s| s >= 75 }
+avg = passing.sum / passing.length
+puts "Passing average: \#{avg}"`;
+---
+<Base title="Tyra vs Ruby" description="Comparing Tyra and Ruby for LLM code generation — training data vs spec injection">
+  <style>
+    .compare-header { margin-bottom: 2rem; }
+    .compare-header p { color: var(--text-muted); max-width: 680px; }
+    .rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .rate-card.tyra { border-color: var(--accent); }
+    .rate-value { font-size: 2.5rem; font-weight: 700; }
+    .rate-card.tyra .rate-value { color: var(--accent); }
+    .rate-lang { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .rate-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 700px) { .side-by-side { grid-template-columns: 1fr; } }
+    .code-block-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.4rem; }
+    .tradeoff-list { color: var(--text-muted); padding-left: 1.5rem; font-size: 0.925rem; }
+    .tradeoff-list li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .honest-note { background: var(--bg-secondary); border-left: 3px solid var(--border); padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; color: var(--text-muted); font-size: 0.875rem; margin: 1.5rem 0; }
+    .highlight-box { background: rgba(247, 129, 102, 0.07); border: 1px solid rgba(247, 129, 102, 0.3); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+    .highlight-box p { color: var(--text); margin: 0; }
+  </style>
+
+  <div class="compare-header">
+    <h1>Tyra vs Ruby</h1>
+    <p>
+      Ruby has the highest LLM pass rate in our benchmark at 99%. That reflects decades of
+      training data — LLMs know Ruby extremely well. Tyra, with zero training data, achieves
+      88.7% through spec injection. This comparison is about understanding what that gap means.
+    </p>
+  </div>
+
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-value">99.0%</div>
+      <div class="rate-lang">Ruby</div>
+      <div class="rate-note">Single seed — enormous training data corpus</div>
+    </div>
+    <div class="rate-card tyra">
+      <div class="rate-value">88.7%</div>
+      <div class="rate-lang">Tyra + spec</div>
+      <div class="rate-note">Multi-seed mean (3 seeds), zero training data</div>
+    </div>
+  </div>
+
+  <div class="highlight-box">
+    <p>
+      <strong>The key point:</strong> Ruby's 99% is built on 30+ years of public code, tutorials,
+      Stack Overflow answers, and books. Tyra's 88.7% is built on a single spec document injected
+      into the prompt. That 10 percentage point gap represents the cost of being a new language —
+      and spec injection is how you close most of it on day one.
+    </p>
+  </div>
+
+  <h2>Side-by-side: data transformation</h2>
+
+  <div class="side-by-side">
+    <div>
+      <div class="code-block-label">Tyra</div>
+      <pre><code>{`fn main() -> Unit
+  let scores = [85, 92, 78, 96, 61, 74]
+  let passing = list.filter(scores, fn(s) s >= 75 end)
+  let total = list.fold(passing, 0, fn(acc, s) acc + s end)
+  let avg = total / list.len(passing)
+  println("Passing average: #{avg}")
+end`}</code></pre>
+    </div>
+    <div>
+      <div class="code-block-label">Ruby</div>
+      <pre><code>{rubyCode}</code></pre>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Ruby's method-chaining style is elegant and concise. Tyra uses explicit module functions
+    (<code>list.filter</code>, <code>list.fold</code>) rather than methods on the collection,
+    which is more explicit about what's happening — a tradeoff that helps LLMs working only
+    from a spec document.
+  </p>
+
+  <h2>Training data vs spec injection</h2>
+
+  <p style="color: var(--text-muted);">
+    The experiment Tyra runs is: <em>if you design a language specifically to be spec-injectable,
+    how close can you get to a language with decades of training data?</em>
+  </p>
+
+  <p style="color: var(--text-muted);">
+    The answer, at 88.7% vs 99%, is: close enough to be useful. For teams building
+    internal tools or prototypes with LLM assistance, that gap is meaningful but not prohibitive —
+    especially when Tyra's type system catches bug classes that Ruby's dynamic typing misses entirely.
+  </p>
+
+  <h2>Honest tradeoffs</h2>
+
+  <ul class="tradeoff-list">
+    <li><strong>Ruby wins:</strong> 99% pass rate, massive ecosystem (gems), Rails, Sinatra, decades of production use. Ruby is battle-tested.</li>
+    <li><strong>Ruby wins:</strong> Dynamic typing enables rapid prototyping patterns that Tyra's static type system makes more verbose.</li>
+    <li><strong>Ruby wins:</strong> Enormous community, learning resources, hiring pool.</li>
+    <li><strong>Tyra advantage:</strong> Static types catch bugs at compile time that Ruby finds at runtime (or never, for rarely-executed paths).</li>
+    <li><strong>Tyra advantage:</strong> <code>Float</code> has no <code>==</code>, preventing NaN bugs. Ruby inherits IEEE 754 semantics silently.</li>
+    <li><strong>Tyra advantage:</strong> 88.7% first-try pass rate with zero training data shows the spec-injection approach works — the gap to Ruby will narrow as LLMs train on more Tyra code.</li>
+    <li><strong>Tyra is new:</strong> No gems equivalent, small ecosystem, active compiler development. Ruby is the safer production choice today.</li>
+  </ul>
+
+  <div class="honest-note">
+    Tyra is inspired by Ruby's readability and is not a replacement for it. Ruby's 99% benchmark
+    result is something to aspire to, not compete with. The comparison shows that spec injection
+    is a viable path for new languages to achieve high LLM accuracy without waiting for years
+    of incidental training data.
+  </div>
+
+  <p style="color: var(--text-muted);">
+    <a href="/leaderboard">View full leaderboard &rarr;</a>
+  </p>
+</Base>

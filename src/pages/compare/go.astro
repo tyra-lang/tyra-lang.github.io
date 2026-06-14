@@ -1,0 +1,127 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const goCode = `package main
+
+import "fmt"
+
+func main() {
+    nums := []int{1,2,3,4,5,6,7,8,9,10}
+    var evens []int
+    for _, n := range nums {
+        if n%2 == 0 {
+            evens = append(evens, n)
+        }
+    }
+    for _, n := range evens {
+        fmt.Println(n)
+    }
+}`;
+---
+<Base title="Tyra vs Go" description="Comparing Tyra and Go for LLM code generation — pass rates, conciseness, tradeoffs">
+  <style>
+    .compare-header { margin-bottom: 2rem; }
+    .compare-header p { color: var(--text-muted); max-width: 680px; }
+    .rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .rate-card.tyra { border-color: var(--accent); }
+    .rate-value { font-size: 2.5rem; font-weight: 700; }
+    .rate-card.tyra .rate-value { color: var(--accent); }
+    .rate-lang { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .rate-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 700px) { .side-by-side { grid-template-columns: 1fr; } }
+    .code-block-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.4rem; }
+    .tradeoff-list { color: var(--text-muted); padding-left: 1.5rem; font-size: 0.925rem; }
+    .tradeoff-list li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .honest-note { background: var(--bg-secondary); border-left: 3px solid var(--border); padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; color: var(--text-muted); font-size: 0.875rem; margin: 1.5rem 0; }
+  </style>
+
+  <div class="compare-header">
+    <h1>Tyra vs Go</h1>
+    <p>
+      Go is a battle-tested language with excellent tooling, a strong standard library,
+      and massive deployment at scale. The comparison here is about a narrow question:
+      LLM code generation accuracy on first try, and what language design choices drive that metric.
+    </p>
+  </div>
+
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-value">81.0%</div>
+      <div class="rate-lang">Go</div>
+      <div class="rate-note">Single seed estimate</div>
+    </div>
+    <div class="rate-card tyra">
+      <div class="rate-value">88.7%</div>
+      <div class="rate-lang">Tyra + spec</div>
+      <div class="rate-note">Multi-seed mean (3 seeds), spec injected</div>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Tyra achieves 88.7% with zero prior training data; Go's 81% benefits from years of
+    LLM training on Go code. The difference likely reflects Go's verbosity — more boilerplate
+    means more surface area where generated code can deviate from what the test harness expects.
+  </p>
+
+  <h2>Side-by-side: reading a list and filtering</h2>
+
+  <div class="side-by-side">
+    <div>
+      <div class="code-block-label">Tyra</div>
+      <pre><code>{`fn main() -> Unit
+  let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let evens = list.filter(nums, fn(n) n % 2 == 0 end)
+  for n in evens
+    println(n)
+  end
+end`}</code></pre>
+    </div>
+    <div>
+      <div class="code-block-label">Go</div>
+      <pre><code>{goCode}</code></pre>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Go's approach is explicit and readable for experienced Go programmers.
+    For an LLM generating code from a spec, each additional syntactic requirement
+    (package declaration, import paths, <code>range</code> idiom, zero-value syntax)
+    is another opportunity for a minor error that fails the test.
+  </p>
+
+  <h2>Why surface area matters for LLM generation</h2>
+
+  <p style="color: var(--text-muted);">
+    LLM code generation errors typically aren't logic errors — they're syntactic or convention errors.
+    Wrong import path. Forgotten <code>package main</code>. Incorrect error handling idiom.
+    A more concise language with fewer required constructs reduces this surface area.
+  </p>
+
+  <p style="color: var(--text-muted);">
+    Note: the Go and Tyra figures use different methodologies (single seed vs. multi-seed mean),
+    so this is an indicative comparison, not a controlled study.
+  </p>
+
+  <h2>Honest tradeoffs</h2>
+
+  <ul class="tradeoff-list">
+    <li><strong>Go wins:</strong> Production-proven at massive scale. Go's concurrency model, standard library, and deployment story have no equivalent in Tyra today.</li>
+    <li><strong>Go wins:</strong> Extensive tooling, linters, formatters, debuggers, cloud-native ecosystem.</li>
+    <li><strong>Go wins:</strong> Goroutines and channels are genuinely good for concurrent systems. Tyra has no concurrency model yet.</li>
+    <li><strong>Tyra advantage:</strong> Less boilerplate in the generated code means fewer ways for an LLM to make a minor mistake that breaks the test.</li>
+    <li><strong>Tyra advantage:</strong> <code>Float</code> has no <code>==</code>, preventing a class of NaN bugs. Go inherits IEEE 754's reflexivity-breaking semantics.</li>
+    <li><strong>Tyra is new:</strong> No production deployments, small ecosystem, active compiler development. Use Go for production work.</li>
+  </ul>
+
+  <div class="honest-note">
+    Go is a mature, widely-deployed language with a strong track record. Tyra is an experiment in
+    language design for the LLM-generation era. The 88.7% vs 81% comparison is one data point, not a verdict.
+  </div>
+
+  <p style="color: var(--text-muted);">
+    <a href="/leaderboard">View full leaderboard &rarr;</a>
+  </p>
+</Base>

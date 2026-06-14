@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const vCode = `fn main() {
+    words := ['hello', 'world', 'v']
+    for w in words {
+        println(w.to_upper())
+    }
+}`;
+---
+<Base title="Tyra vs V" description="Comparing Tyra and V for LLM code generation — different goals, different tradeoffs">
+  <style>
+    .compare-header { margin-bottom: 2rem; }
+    .compare-header p { color: var(--text-muted); max-width: 680px; }
+    .rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .rate-card.tyra { border-color: var(--accent); }
+    .rate-value { font-size: 2.5rem; font-weight: 700; }
+    .rate-card.tyra .rate-value { color: var(--accent); }
+    .rate-lang { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .rate-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 700px) { .side-by-side { grid-template-columns: 1fr; } }
+    .code-block-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.4rem; }
+    .tradeoff-list { color: var(--text-muted); padding-left: 1.5rem; font-size: 0.925rem; }
+    .tradeoff-list li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .honest-note { background: var(--bg-secondary); border-left: 3px solid var(--border); padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; color: var(--text-muted); font-size: 0.875rem; margin: 1.5rem 0; }
+  </style>
+
+  <div class="compare-header">
+    <h1>Tyra vs V</h1>
+    <p>
+      V (vlang) is a systems programming language aimed at simplicity, performance, and safety.
+      It occupies a different niche from Tyra — low-level systems work vs. web backends and CLI tools.
+      This comparison focuses on LLM generation accuracy, where the two languages have different results.
+    </p>
+  </div>
+
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-value">49.0%</div>
+      <div class="rate-lang">V</div>
+      <div class="rate-note">Single seed estimate</div>
+    </div>
+    <div class="rate-card tyra">
+      <div class="rate-value">88.7%</div>
+      <div class="rate-lang">Tyra + spec</div>
+      <div class="rate-note">Multi-seed mean (3 seeds), spec injected</div>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    V's 49% likely reflects limited LLM training data — V is a newer language with a smaller
+    corpus of public code. Tyra has the same problem (zero training data), but compensates with
+    spec injection. The comparison illustrates that spec injection can be more effective than
+    relying on incidental training data for new languages.
+  </p>
+
+  <h2>Side-by-side: string manipulation</h2>
+
+  <div class="side-by-side">
+    <div>
+      <div class="code-block-label">Tyra</div>
+      <pre><code>{`import string
+
+fn main() -> Unit
+  let words = ["hello", "world", "tyra"]
+  for w in words
+    println(string.to_upper(w))
+  end
+end`}</code></pre>
+    </div>
+    <div>
+      <div class="code-block-label">V</div>
+      <pre><code>{vCode}</code></pre>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    V uses method syntax for string operations; Tyra uses module functions. Both are readable.
+    V's single-quote string literals and curly brace blocks are syntactic conventions that differ
+    from the majority of LLM training data, which may contribute to generation errors.
+  </p>
+
+  <h2>Different goals</h2>
+
+  <p style="color: var(--text-muted);">
+    V is designed for systems programming — manual memory management (optional), C interop,
+    no garbage collector, fast compilation to small binaries. Tyra is designed for
+    web backends and CLI tools where managed memory and high-level abstractions matter more.
+    These are complementary tools for different problem domains.
+  </p>
+
+  <h2>Honest tradeoffs</h2>
+
+  <ul class="tradeoff-list">
+    <li><strong>V wins:</strong> Systems-level control, C interop, and manual memory management when needed. Tyra has none of these.</li>
+    <li><strong>V wins:</strong> Produces small, fast binaries suitable for embedded or constrained environments.</li>
+    <li><strong>V wins:</strong> No garbage collector — predictable latency in performance-critical code.</li>
+    <li><strong>Tyra advantage:</strong> Spec-injected LLM generation at 88.7% vs. V's 49% — significantly better first-try accuracy for application-level code.</li>
+    <li><strong>Tyra advantage:</strong> Higher-level abstractions (map, set, json stdlib) with a clean module system.</li>
+    <li><strong>Tyra is new:</strong> Smaller community, less tooling, no production track record.</li>
+  </ul>
+
+  <div class="honest-note">
+    V and Tyra target different use cases. If you need systems-level control, V is the better fit.
+    If you're building web APIs or CLI tools with LLM-generated code, Tyra's spec injection gives
+    a meaningful accuracy advantage.
+  </div>
+
+  <p style="color: var(--text-muted);">
+    <a href="/leaderboard">View full leaderboard &rarr;</a>
+  </p>
+</Base>

@@ -1,0 +1,126 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const gleamCode = `import gleam/io
+import gleam/int
+
+pub fn divide(a: Int, b: Int) -> Result(Int, String) {
+  case b {
+    0 -> Error("division by zero")
+    _ -> Ok(a / b)
+  }
+}
+
+pub fn main() {
+  case divide(10, 0) {
+    Ok(n) -> io.println("result: " <> int.to_string(n))
+    Error(e) -> io.println("error: " <> e)
+  }
+}`;
+---
+<Base title="Tyra vs Gleam" description="Comparing Tyra and Gleam for LLM code generation — different paradigms, different tradeoffs">
+  <style>
+    .compare-header { margin-bottom: 2rem; }
+    .compare-header p { color: var(--text-muted); max-width: 680px; }
+    .rate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .rate-grid { grid-template-columns: 1fr; } }
+    .rate-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+    .rate-card.tyra { border-color: var(--accent); }
+    .rate-value { font-size: 2.5rem; font-weight: 700; }
+    .rate-card.tyra .rate-value { color: var(--accent); }
+    .rate-lang { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .rate-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+    @media (max-width: 700px) { .side-by-side { grid-template-columns: 1fr; } }
+    .code-block-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.4rem; }
+    .tradeoff-list { color: var(--text-muted); padding-left: 1.5rem; font-size: 0.925rem; }
+    .tradeoff-list li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .honest-note { background: var(--bg-secondary); border-left: 3px solid var(--border); padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; color: var(--text-muted); font-size: 0.875rem; margin: 1.5rem 0; }
+    .caveat-box { background: rgba(247, 129, 102, 0.07); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; font-size: 0.875rem; color: var(--text-muted); }
+  </style>
+
+  <div class="compare-header">
+    <h1>Tyra vs Gleam</h1>
+    <p>
+      Gleam is a functional language on the Erlang/OTP ecosystem — a very different design
+      philosophy from Tyra. This comparison is honest about the benchmark methodology difference
+      that significantly affects the 37% figure.
+    </p>
+  </div>
+
+  <div class="rate-grid">
+    <div class="rate-card">
+      <div class="rate-value">37.0%</div>
+      <div class="rate-lang">Gleam</div>
+      <div class="rate-note">Single seed — see caveat below</div>
+    </div>
+    <div class="rate-card tyra">
+      <div class="rate-value">88.7%</div>
+      <div class="rate-lang">Tyra + spec</div>
+      <div class="rate-note">Multi-seed mean (3 seeds), spec injected</div>
+    </div>
+  </div>
+
+  <div class="caveat-box">
+    <strong>Important caveat:</strong> Gleam's 37% reflects the test harness wrapping overhead for
+    Erlang/OTP projects — compiling Gleam programs in the benchmark harness requires specific project
+    structure and build steps that the harness may not fully accommodate. The 37% figure is not purely
+    a measure of Gleam's LLM-generability; part of it reflects infrastructure friction in the benchmark setup.
+    Gleam is a well-designed language and this comparison should be read with that in mind.
+  </div>
+
+  <h2>Different paradigms</h2>
+
+  <div class="side-by-side">
+    <div>
+      <div class="code-block-label">Tyra</div>
+      <pre><code>{`fn main() -> Unit
+  let result = divide(10, 0)
+  match result
+    Ok(n) =>
+      println("result: #{n}")
+    Err(e) =>
+      println("error: #{e}")
+  end
+end
+
+fn divide(a: Int, b: Int) -> Result(Int, String)
+  if b == 0
+    return Err("division by zero")
+  end
+  return Ok(a / b)
+end`}</code></pre>
+    </div>
+    <div>
+      <div class="code-block-label">Gleam</div>
+      <pre><code>{gleamCode}</code></pre>
+    </div>
+  </div>
+
+  <p style="color: var(--text-muted);">
+    Both languages have pattern matching and <code>Result</code> types. Gleam is fully functional —
+    no mutation, no imperative loops. Tyra takes an OOP-style approach with pattern matching added.
+    Different tradeoffs, different target audiences.
+  </p>
+
+  <h2>Honest tradeoffs</h2>
+
+  <ul class="tradeoff-list">
+    <li><strong>Gleam wins:</strong> The Erlang/OTP ecosystem gives Gleam genuine fault-tolerance and distributed systems capabilities that Tyra doesn't have.</li>
+    <li><strong>Gleam wins:</strong> Purely functional style with no mutation is a principled design choice. If you want that, Gleam delivers it.</li>
+    <li><strong>Gleam wins:</strong> Runs on both the BEAM VM and JavaScript, giving deployment flexibility.</li>
+    <li><strong>Tyra advantage:</strong> OOP-style with explicit types is a pattern LLMs have more training on. The spec-injected 88.7% reflects that.</li>
+    <li><strong>Tyra advantage:</strong> No build system overhead for simple programs — the benchmark measures language clarity, not project setup.</li>
+    <li><strong>Tyra is new:</strong> Small ecosystem, no production track record, active development.</li>
+  </ul>
+
+  <div class="honest-note">
+    Gleam's benchmark score reflects infrastructure friction as much as language properties.
+    This is not a fair comparison in the traditional sense — it's a data point about how different
+    language ecosystems affect LLM-generated code success rates end-to-end.
+  </div>
+
+  <p style="color: var(--text-muted);">
+    <a href="/leaderboard">View full leaderboard &rarr;</a>
+  </p>
+</Base>
