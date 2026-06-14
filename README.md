@@ -47,4 +47,4 @@ Push to `main` triggers `.github/workflows/deploy.yml`, which runs `npm run buil
 
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0
