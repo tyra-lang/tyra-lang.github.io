@@ -1,0 +1,156 @@
+<!--
+  OG image source template for Tyra (https://tyra-lang.github.io)
+
+  This file generates public/og.png.
+  To regenerate after editing:
+    Option A (Python, recommended — no browser needed):
+      1. Edit scripts/generate-og.py to match any design changes made here
+      2. Run: python3 scripts/generate-og.py
+         (requires: pip install Pillow)
+
+    Option B (browser screenshot):
+      1. Open this file in a browser
+      2. Resize viewport to 1200 x 630
+      3. Take a full-page screenshot and save as public/og.png
+
+  Design tokens:
+    Background : #0d1117  (matches favicon dark bg)
+    Coral      : #f78166  (Tyra primary, dark-mode value)
+    Coral dim  : #bf3d20  (light-mode primary, used for accent bar)
+    Text white : #e6edf3  (GitHub dark foreground)
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+    }
+
+    body {
+      background: #0d1117;
+      font-family: Georgia, 'Times New Roman', serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 64px 80px;
+      position: relative;
+    }
+
+    /* Coral accent bar — left edge */
+    body::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 8px;
+      height: 100%;
+      background: #bf3d20;
+    }
+
+    /* Subtle grid texture overlay */
+    body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(247,129,102,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247,129,102,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    /* "T" icon — mirrors favicon shape */
+    .icon {
+      width: 56px;
+      height: 56px;
+      background: #0d1117;
+      border: 2px solid #f78166;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .icon span {
+      font-family: Georgia, serif;
+      font-size: 36px;
+      font-weight: bold;
+      color: #f78166;
+      line-height: 1;
+      /* nudge baseline to match favicon vertical center */
+      padding-top: 4px;
+    }
+
+    .brand {
+      font-family: Georgia, serif;
+      font-size: 40px;
+      font-weight: bold;
+      color: #f78166;
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      font-family: Georgia, serif;
+      font-size: 68px;
+      font-weight: bold;
+      color: #e6edf3;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      margin-bottom: 28px;
+      /* prevent wrap beyond 2 lines */
+      max-width: 900px;
+    }
+
+    /* highlight "LLMs" in coral */
+    h1 em {
+      font-style: normal;
+      color: #f78166;
+    }
+
+    .tagline {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      font-size: 26px;
+      color: #8b949e;
+      letter-spacing: -0.01em;
+      font-weight: 400;
+    }
+
+    /* Bottom-right: domain watermark */
+    .domain {
+      position: absolute;
+      bottom: 44px;
+      right: 80px;
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      font-size: 20px;
+      color: #484f58;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-row">
+    <div class="icon"><span>T</span></div>
+    <span class="brand">Tyra</span>
+  </div>
+
+  <h1>a language <em>LLMs</em> get right<br>on the first try</h1>
+
+  <p class="tagline">Fast · Readable · Spec-injected</p>
+
+  <span class="domain">tyra-lang.github.io</span>
+</body>
+</html>

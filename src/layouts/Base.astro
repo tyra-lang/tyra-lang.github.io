@@ -4,8 +4,40 @@ import '@picocss/pico/css/pico.classless.zinc.min.css';
 interface Props {
   title: string;
   description?: string;
+  /** Override og:type. Defaults to "website". */
+  ogType?: string;
+  /**
+   * Override the canonical URL. May be a path ("/foo/") or absolute URL.
+   * Resolved against Astro.site, so relative values are safe.
+   * Defaults to the current page's normalized pathname.
+   * Prefer setting this via Props rather than via <slot name="head" />
+   * to avoid emitting duplicate canonical/og:url tags.
+   */
+  canonical?: string;
 }
-const { title, description = "Tyra — a language LLMs get right on the first try" } = Astro.props;
+
+const {
+  title,
+  description = "Tyra — a language LLMs get right on the first try",
+  ogType = "website",
+  canonical,
+} = Astro.props;
+
+// Normalize pathname: ensure trailing slash to match Astro's static directory output
+// e.g. /compare/v  →  /compare/v/   (root "/" is already normalized)
+const pathname = Astro.url.pathname.endsWith('/')
+  ? Astro.url.pathname
+  : Astro.url.pathname + '/';
+
+// Always resolve to absolute URLs. new URL() handles both relative paths and
+// already-absolute values, so passing canonical="/foo/" or canonical="https://..."
+// both produce correct absolute output.
+const canonicalURL = new URL(canonical ?? pathname, Astro.site).href;
+// OG image is a single shared asset. If per-page images are needed in the
+// future, add imageWidth/imageHeight props at the same time to keep dimensions
+// consistent with the actual file.
+const ogImageURL   = new URL("/og.png", Astro.site).href;
+const fullTitle    = `${title} · Tyra`;
 ---
 <!doctype html>
 <html lang="en">
@@ -13,9 +45,35 @@ const { title, description = "Tyra — a language LLMs get right on the first tr
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
-  <title>{title} · Tyra</title>
+  <title>{fullTitle}</title>
   <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="canonical" href={canonicalURL} />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content={ogType} />
+  <meta property="og:url"         content={canonicalURL} />
+  <meta property="og:site_name"   content="Tyra" />
+  <meta property="og:title"       content={fullTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image"       content={ogImageURL} />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"   content="Tyra — a language LLMs get right on the first try" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content={fullTitle} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image"       content={ogImageURL} />
+
+  <!--
+    Use <slot name="head" /> for page-specific extras that do NOT conflict
+    with the tags above (e.g. <link rel="preload">, page-specific <script>).
+    To override canonical, og:image, og:type, or og:title, use the Props
+    (canonical / image / ogType / title) instead — slot injection would
+    produce duplicate tags that crawlers handle inconsistently.
+  -->
   <slot name="head" />
 
   <!-- Pre-paint theme init: avoids flash of wrong theme -->

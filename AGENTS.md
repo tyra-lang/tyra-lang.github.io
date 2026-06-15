@@ -32,9 +32,13 @@ src/
       ruby.astro          — Tyra vs Ruby
       v.astro             — Tyra vs V
 public/
+  og.png                  — shared OG image (1200×630, committed; see scripts/ to regenerate)
   wasm/
     tyra_wasm.js          — wasm-bindgen JS glue (DO NOT edit manually)
     tyra_wasm_bg.wasm     — compiled Tyra WASM binary (DO NOT edit manually)
+scripts/
+  og-template.html        — design source for og.png (HTML + CSS, open in browser to preview)
+  generate-og.py          — raster generator for og.png (requires Pillow; NOT an npm dependency)
 .github/workflows/
   deploy.yml              — GitHub Pages deployment
 ```
@@ -62,6 +66,26 @@ cp compiler/crates/tyra-wasm/pkg/tyra_wasm_bg.wasm ../website/public/wasm/
 ```
 
 Then commit and push — GitHub Actions will redeploy.
+
+## OG Image
+
+`public/og.png` (1200×630) is committed to the repo and used as the shared social-card image
+for all pages. It does **not** regenerate at build time — the committed PNG is the authoritative
+deployed asset.
+
+To regenerate after a brand or tagline change:
+
+```bash
+# macOS only — font resolution depends on system fonts (Georgia, SF Pro / Helvetica).
+# On other platforms the output will look different due to font fallback.
+# Requires Pillow (Python); NOT listed in package.json — it is a one-off authoring tool.
+pip install Pillow
+python3 scripts/generate-og.py
+# → overwrites public/og.png; commit the result
+```
+
+The design source is `scripts/og-template.html` (HTML + CSS). Edit both files together
+when the design changes, then run the script on macOS to produce the new PNG.
 
 ## Playground Samples
 
