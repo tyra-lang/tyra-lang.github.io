@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const comparisons = [
+  { slug: 'crystal', name: 'Crystal', blurb: 'Two Ruby-flavored compiled languages — types, error handling, and metaprogramming.' },
+  { slug: 'go', name: 'Go', blurb: 'ADTs and exhaustive matching versus Go simplicity and explicit error returns.' },
+  { slug: 'gleam', name: 'Gleam', blurb: 'Static types and no null, compiled to native binaries instead of the BEAM.' },
+  { slug: 'v', name: 'V', blurb: 'Readability and safety with a small, stable toolchain.' },
+  { slug: 'ruby', name: 'Ruby', blurb: 'Ruby readability with compile-time types and single-binary distribution.' },
+];
+---
+<Base title="Compare" description="How Tyra compares to Crystal, Go, Gleam, V, and Ruby — design differences, not superiority claims.">
+  <h1>Tyra compared</h1>
+  <p style="color: var(--text-muted); max-width: 640px;">
+    How Tyra relates to nearby languages. These pages describe differences in design and
+    tradeoffs — not claims that Tyra is faster or simpler. Read them and judge for yourself.
+  </p>
+  <ul style="list-style: none; padding-left: 0;">
+    {comparisons.map((c) => (
+      <li style="margin-bottom: 1rem;">
+        <a href={`/compare/${c.slug}/`}><strong>Tyra vs {c.name}</strong> &rarr;</a>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">{c.blurb}</div>
+      </li>
+    ))}
+  </ul>
+</Base>
