@@ -1,7 +1,45 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const showcase = `# A tiny pricing model in Tyra: algebraic data types, exhaustive
+# matching, errors as values (Result), and no null anywhere.
+type Plan =
+  | Free
+  | Pro(seats: Int)
+  | Enterprise(seats: Int, discount: Int)
+
+fn monthly_cost(plan: Plan) -> Result<Int, String>
+  match plan
+  when Free
+    Ok(0)
+
+  when Pro(seats)
+    Ok(seats * 20)
+
+  when Enterprise(seats, discount)
+    if discount < 0 or discount > 100
+      Err("discount #{discount}% is out of range")
+    else
+      Ok(((seats * 15) * (100 - discount)) / 100)
+    end
+  end
+end
+
+fn main() -> Unit
+  let plans = [Plan.Free, Plan.Pro(seats: 5), Plan.Enterprise(seats: 50, discount: 20)]
+  for plan in plans
+    match monthly_cost(plan)
+    when Ok(cost)
+      println("$#{cost}/mo")
+
+    when Err(msg)
+      println("error: #{msg}")
+    end
+  end
+end
+`;
 ---
-<Base title="Home" description="Tyra — a language LLMs get right on the first try">
+<Base title="Home" description="Tyra is a readable, statically-typed, Ruby-flavored compiled language — Ruby-like syntax, LLVM-native binaries, no null, Result/Option, and exhaustive pattern matching.">
   <style>
     .hero {
       text-align: center;
@@ -43,6 +81,40 @@ import Base from '../layouts/Base.astro';
       justify-content: center;
       flex-wrap: wrap;
     }
+
+    .install {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--code-bg, #161b22);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      margin: 0 auto 1.5rem;
+      max-width: 100%;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+
+    .install code {
+      font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: 4px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover { opacity: 0.9; }
 
     .section {
       margin-bottom: 3.5rem;
@@ -100,35 +172,30 @@ import Base from '../layouts/Base.astro';
 
   <div class="hero">
     <div class="hero-logo">Tyra</div>
-    <div class="hero-tagline">The language LLMs get right on the first try</div>
+    <div class="hero-tagline">A readable, statically-typed, Ruby-flavored compiled language</div>
     <p class="hero-sub">
-      Tyra is a statically-typed, Ruby-inspired language that compiles to native binaries via LLVM.
-      With spec injection, Claude achieves an <strong>88.7% mean pass rate</strong> across 100 tasks
-      on first attempt — a result achieved with zero prior training data on Tyra.
+      Tyra reads like Ruby, compiles to native binaries via LLVM, and ships with no null,
+      exhaustive pattern matching, and <code>Result</code>/<code>Option</code> built in.
+      Its design also makes code unusually predictable — given only the spec and no prior
+      training data, Claude writes correct Tyra on the first try
+      <strong>88.7% of the time</strong> (3 seeds &times; 100 tasks).
     </p>
+    <div class="install">
+      <code id="install-cmd">curl -fsSL https://raw.githubusercontent.com/tyra-lang/tyra/main/scripts/install.sh | sh</code>
+      <button class="copy-btn" data-clipboard="#install-cmd" aria-label="Copy install command" type="button">Copy</button>
+    </div>
     <div class="hero-actions">
-      <a href="/playground" class="btn btn-primary">Try it in the Playground &rarr;</a>
-      <a href="https://github.com/tyra-lang/tyra" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+      <a href="/playground" class="btn btn-primary">Run it in your browser &rarr;</a>
+      <a href="https://github.com/tyra-lang/tyra" class="btn btn-secondary" target="_blank" rel="noopener">&#9733; Star on GitHub</a>
     </div>
   </div>
 
   <div class="two-col">
     <div class="section">
       <div class="section-title">Code preview</div>
-      <pre><code>fn fib(n: Int) -&gt; Int
-  if n &lt;= 1
-    return n
-  end
-  return fib(n - 1) + fib(n - 2)
-end
-
-fn main() -&gt; Unit
-  for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    println("fib(#{"{"}i{"}"}) = #{"{"}fib(i){"}"}")
-  end
-end</code></pre>
+      <pre><code>{showcase}</code></pre>
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
-        Clean, readable syntax. Immutable-by-default. Strong static types.
+        Algebraic data types, exhaustive matching, <code>Result</code> instead of exceptions, no null.
         <a href="/playground">Run it live &rarr;</a>
       </p>
     </div>
@@ -184,11 +251,11 @@ end</code></pre>
     <div class="section-title">Design goals</div>
     <div class="two-col">
       <div>
-        <h3>Spec-driven generation</h3>
+        <h3>Readable by humans, predictable for tools</h3>
         <p style="color: var(--text-muted);">
-          Tyra's entire language spec fits in a single context window. Inject it, and an LLM
-          generates correct code without having seen the language before. The 88.7% result
-          is achieved with zero training data on Tyra — only the spec.
+          <code>end</code> blocks, explicit argument labels, no implicit conversions, one way to do things.
+          The same design that makes Tyra easy to read also lets an LLM generate correct code from the
+          spec alone — the 88.7% result uses zero training data on Tyra, only the spec.
         </p>
       </div>
       <div>
@@ -201,4 +268,27 @@ end</code></pre>
       </div>
     </div>
   </div>
+
+  <script>
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sel = btn.getAttribute('data-clipboard');
+        const el = sel ? document.querySelector(sel) : null;
+        if (!el || !el.textContent) return;
+        const text = el.textContent.trim();
+        const flash = (label) => {
+          const prev = btn.textContent;
+          btn.textContent = label;
+          setTimeout(() => { btn.textContent = prev; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => flash('Copied!'))
+            .catch(() => flash('Press ⌘/Ctrl+C'));
+        } else {
+          flash('Press ⌘/Ctrl+C');
+        }
+      });
+    });
+  </script>
 </Base>
