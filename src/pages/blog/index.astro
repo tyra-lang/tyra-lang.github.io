@@ -16,6 +16,7 @@ const posts = Object.values(modules)
     {posts.map((p) => (
       <li style="margin-bottom: 1.25rem;">
         <a href={p.url}><strong>{p.title}</strong></a>
+        <span style="margin-left: 0.5rem; font-size: 0.7rem; font-weight: 600; padding: 0.05rem 0.4rem; border-radius: 4px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: middle;">{p.lang === 'ja' ? '日本語' : 'EN'}</span>
         <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">
           {p.pubDate} &middot; {p.description}
         </div>

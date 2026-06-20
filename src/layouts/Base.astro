@@ -4,6 +4,8 @@ import '@picocss/pico/css/pico.classless.zinc.min.css';
 interface Props {
   title: string;
   description?: string;
+  /** Document language for <html lang>. Defaults to "en". */
+  lang?: string;
   /** Override og:type. Defaults to "website". */
   ogType?: string;
   /**
@@ -21,6 +23,7 @@ const {
   description = "Tyra is a readable, statically-typed, Ruby-flavored compiled language that compiles to native binaries via LLVM.",
   ogType = "website",
   canonical,
+  lang = "en",
 } = Astro.props;
 
 // Normalize pathname: ensure trailing slash to match Astro's static directory output
@@ -40,7 +43,7 @@ const ogImageURL   = new URL("/og.png", Astro.site).href;
 const fullTitle    = `${title} · Tyra`;
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />

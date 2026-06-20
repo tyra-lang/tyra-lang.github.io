@@ -3,7 +3,7 @@ import Base from './Base.astro';
 
 const { frontmatter } = Astro.props;
 ---
-<Base title={frontmatter.title} description={frontmatter.description}>
+<Base title={frontmatter.title} description={frontmatter.description} lang={frontmatter.lang}>
   <style>
     .post { max-width: 720px; margin: 0 auto; }
     .post-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
