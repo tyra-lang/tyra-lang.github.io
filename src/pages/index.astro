@@ -178,14 +178,14 @@ end
       exhaustive pattern matching, and <code>Result</code>/<code>Option</code> built in.
       Its design also makes code unusually predictable — given only the spec and no prior
       training data, Claude writes correct Tyra on the first try
-      <strong>88.7% of the time</strong> (3 seeds &times; 100 tasks).
+      <strong>88.7% of the time</strong> (<a href="/leaderboard/">3 seeds &times; 100 tasks — methodology</a>).
     </p>
     <div class="install">
       <code id="install-cmd">curl -fsSL https://raw.githubusercontent.com/tyra-lang/tyra/main/scripts/install.sh | sh</code>
       <button class="copy-btn" data-clipboard="#install-cmd" aria-label="Copy install command" type="button">Copy</button>
     </div>
     <div class="hero-actions">
-      <a href="/playground" class="btn btn-primary">Run it in your browser &rarr;</a>
+      <a href="/playground/?sample=showcase&amp;run=1" class="btn btn-primary">Run it in your browser &rarr;</a>
       <a href="https://github.com/tyra-lang/tyra" class="btn btn-secondary" target="_blank" rel="noopener">&#9733; Star on GitHub</a>
     </div>
   </div>
@@ -196,7 +196,7 @@ end
       <pre><code>{showcase}</code></pre>
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
         Algebraic data types, exhaustive matching, <code>Result</code> instead of exceptions, no null.
-        <a href="/playground">Run it live &rarr;</a>
+        <a href="/playground/?sample=showcase&amp;run=1">Run it live &rarr;</a>
       </p>
     </div>
 
@@ -240,8 +240,9 @@ end
         </tbody>
       </table>
       <p class="leaderboard-note">
-        "Tyra + spec" injects the language spec as a system prompt. Other languages use no special prompt.
-        100 tasks, Claude, multi-seed mean.
+        Tyra's 88.7% is a 3-seed mean with the spec injected as a system prompt. The other
+        languages are single-seed point estimates from a separate run — directional context only,
+        not a same-condition comparison (a multi-seed cross-language sweep is pending).
       </p>
       <a href="/leaderboard" class="view-more">View full leaderboard &rarr;</a>
     </div>

@@ -155,6 +155,7 @@ import Base from '../layouts/Base.astro';
   <div class="controls">
     <label for="sample-select">Sample:</label>
     <select id="sample-select">
+      <option value="showcase">Showcase — ADTs + match + Result</option>
       <option value="hello">Hello World</option>
       <option value="fib">Fibonacci</option>
       <option value="string">String operations</option>
@@ -180,6 +181,42 @@ import Base from '../layouts/Base.astro';
     import { oneDark } from '@codemirror/theme-one-dark';
 
     const SAMPLES: Record<string, string> = {
+      showcase: `# A tiny pricing model in Tyra: algebraic data types, exhaustive
+# matching, errors as values (Result), and no null anywhere.
+type Plan =
+  | Free
+  | Pro(seats: Int)
+  | Enterprise(seats: Int, discount: Int)
+
+fn monthly_cost(plan: Plan) -> Result<Int, String>
+  match plan
+  when Free
+    Ok(0)
+
+  when Pro(seats)
+    Ok(seats * 20)
+
+  when Enterprise(seats, discount)
+    if discount < 0 or discount > 100
+      Err("discount #{discount}% is out of range")
+    else
+      Ok(((seats * 15) * (100 - discount)) / 100)
+    end
+  end
+end
+
+fn main() -> Unit
+  let plans = [Plan.Free, Plan.Pro(seats: 5), Plan.Enterprise(seats: 50, discount: 20)]
+  for plan in plans
+    match monthly_cost(plan)
+    when Ok(cost)
+      println("$#{cost}/mo")
+
+    when Err(msg)
+      println("error: #{msg}")
+    end
+  end
+end`,
       hello: `fn main() -> Unit\n  println("Hello, Tyra!")\nend`,
       fib: `fn fib(n: Int) -> Int\n  if n <= 1\n    return n\n  end\n  return fib(n - 1) + fib(n - 2)\nend\n\nfn main() -> Unit\n  for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n    println("fib(#{i}) = #{fib(i)}")\n  end\nend`,
       string: `import string\n\nfn main() -> Unit\n  let s = "hello, tyra!"\n  println(string.to_ascii_upper(s))\n  println(string.reverse(s))\n  println(string.len(s))\nend`,
@@ -187,9 +224,24 @@ import Base from '../layouts/Base.astro';
       json: `import json\n\nfn main() -> Unit\n  let text = "{\\"name\\":\\"Tyra\\",\\"version\\":1}"\n  match json.parse(text)\n  when Ok(doc)\n    match doc.get(key: "name")\n    when Some(v)\n      match v.as_string()\n      when Some(s)\n        println("name=#{s}")\n      when None\n        println("not a string")\n      end\n    when None\n      println("no name key")\n    end\n  when Err(_)\n    println("parse error")\n  end\nend`,
     };
 
+    // Deep-link support: ?code=<base64> loads arbitrary source; ?sample=<key>
+    // selects a named sample; default is the showcase. (?run=1 is handled after
+    // the WASM runtime is ready, in the inline loader below.)
+    const params = new URLSearchParams(window.location.search);
+    let initialKey = 'showcase';
+    let initialDoc = SAMPLES['showcase'];
+    const codeParam = params.get('code');
+    const sampleParam = params.get('sample');
+    if (codeParam) {
+      try { initialDoc = decodeURIComponent(escape(atob(codeParam))); initialKey = ''; } catch (e) { /* fall back to showcase */ }
+    } else if (sampleParam && SAMPLES[sampleParam]) {
+      initialKey = sampleParam;
+      initialDoc = SAMPLES[sampleParam];
+    }
+
     const view = new EditorView({
       state: EditorState.create({
-        doc: SAMPLES['hello'],
+        doc: initialDoc,
         extensions: [
           basicSetup,
           python(),
@@ -203,7 +255,9 @@ import Base from '../layouts/Base.astro';
       parent: document.getElementById('editor-container')!,
     });
 
-    document.getElementById('sample-select')!.addEventListener('change', (e) => {
+    const selectEl = document.getElementById('sample-select') as HTMLSelectElement;
+    if (initialKey) selectEl.value = initialKey;
+    selectEl.addEventListener('change', (e) => {
       const val = (e.target as HTMLSelectElement).value;
       const code = SAMPLES[val] || '';
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: code } });
@@ -231,6 +285,9 @@ import Base from '../layouts/Base.astro';
           statusEl.textContent = 'Ready';
           statusEl.style.color = 'var(--green)';
           runBtn.disabled = false;
+          if (new URLSearchParams(window.location.search).get('run') === '1') {
+            runBtn.click();
+          }
         } catch (err) {
           statusEl.textContent = 'WASM unavailable (build from source to use)';
           statusEl.style.color = 'var(--text-muted)';
