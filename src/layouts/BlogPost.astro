@@ -1,0 +1,28 @@
+---
+import Base from './Base.astro';
+
+const { frontmatter } = Astro.props;
+---
+<Base title={frontmatter.title} description={frontmatter.description}>
+  <style>
+    .post { max-width: 720px; margin: 0 auto; }
+    .post-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+    .post :global(pre) { overflow-x: auto; }
+    .post-cta {
+      margin-top: 2.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+  <article class="post">
+    <div class="post-meta">{frontmatter.pubDate} &middot; Tyra blog</div>
+    <slot />
+    <div class="post-cta">
+      <a href="/playground/?sample=showcase&amp;run=1">Run Tyra in your browser</a> &middot;
+      <a href="https://github.com/tyra-lang/tyra" target="_blank" rel="noopener">Star on GitHub</a> &middot;
+      Point your AI assistant at <a href="/llms.txt">llms.txt</a>
+    </div>
+  </article>
+</Base>

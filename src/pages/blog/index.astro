@@ -1,0 +1,25 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const modules = import.meta.glob('./*.md', { eager: true });
+const posts = Object.values(modules)
+  .map((m) => ({ url: m.url, ...m.frontmatter }))
+  .sort((a, b) => (a.pubDate < b.pubDate ? 1 : -1));
+---
+<Base title="Blog" description="Design notes and deep-dives on the Tyra programming language — the canonical home for posts that also appear on dev.to and Zenn.">
+  <h1>Blog</h1>
+  <p style="color: var(--text-muted); max-width: 640px;">
+    Design notes and deep-dives. These posts also appear on dev.to and Zenn, with the
+    canonical link pointing back here.
+  </p>
+  <ul style="list-style: none; padding-left: 0;">
+    {posts.map((p) => (
+      <li style="margin-bottom: 1.25rem;">
+        <a href={p.url}><strong>{p.title}</strong></a>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">
+          {p.pubDate} &middot; {p.description}
+        </div>
+      </li>
+    ))}
+  </ul>
+</Base>

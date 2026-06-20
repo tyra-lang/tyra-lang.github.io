@@ -6,6 +6,13 @@ export default defineConfig({
   base: '/',
   output: 'static',
   integrations: [sitemap()],
+  markdown: {
+    // Tyra has no Shiki grammar; alias to Ruby (closest surface syntax) so
+    // `tyra` code blocks in blog posts get sensible highlighting.
+    shikiConfig: {
+      langAlias: { tyra: 'ruby' },
+    },
+  },
   vite: {
     build: {
       rollupOptions: {
