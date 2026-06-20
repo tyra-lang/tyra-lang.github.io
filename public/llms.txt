@@ -7,7 +7,7 @@ Tyra is a statically typed, Ruby-inspired language that compiles to native binar
 ## Links
 
 - Website: https://tyra-lang.github.io
-- Try in your browser (playground): https://tyra-lang.github.io/playground
+- Try in your browser (playground): https://tyra-lang.github.io/playground/?sample=showcase&run=1
 - Language spec (English): https://github.com/tyra-lang/tyra/blob/main/docs/spec/en/language-spec.md
 - Getting started: https://github.com/tyra-lang/tyra/blob/main/docs/getting-started/README.md
 - Full AI reference (spec + guide + stdlib + errors): https://github.com/tyra-lang/tyra/blob/main/docs/llms/llms-full.md
